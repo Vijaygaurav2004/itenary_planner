@@ -119,7 +119,7 @@ export function ItineraryDisplay({ itinerary, onReset }: ItineraryDisplayProps) 
   return (
     <Card className="mx-auto max-w-4xl overflow-hidden border-none bg-gradient-to-br from-blue-50 to-indigo-50 shadow-2xl backdrop-blur-sm dark:from-slate-900 dark:to-slate-800 rounded-2xl">
       <CardHeader className="relative overflow-hidden rounded-t-lg bg-gradient-to-r from-blue-600 to-indigo-600 p-10 text-white">
-        <div className="absolute inset-0 bg-[url('/images/travel-pattern.png')] opacity-10"></div>
+        <div className="absolute inset-0 bg-[url('/images/world-map-dots.svg')] opacity-10"></div>
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>

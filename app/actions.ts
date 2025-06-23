@@ -204,7 +204,7 @@ export async function generateItinerary(data: FormValues): Promise<string> {
     initialItinerary = perplexityResult.choices[0].message.content;
     
     // If OpenAI API key is provided or use default test key, enhance the itinerary with ChatGPT
-    const openaiApiKey = data.openaiApiKey || "sk-yourTestKeyHere123456789"; // Default test key
+    const openaiApiKey = data.openaiApiKey; // Default test key
     if (openaiApiKey) {
       // Construct the ChatGPT prompt to enhance the Perplexity data
       const enhancementPrompt = `

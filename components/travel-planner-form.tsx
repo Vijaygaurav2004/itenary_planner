@@ -121,6 +121,16 @@ export function TravelPlannerForm() {
       numberOfTravelers: 1,
       ageGroups: [],
       specialRequirements: "",
+      totalBudget: "",
+      spendingPriorities: "",
+      foodPreferences: "",
+      customPace: "",
+      accommodationLocation: "",
+      arrivalDetails: "",
+      departureDetails: "",
+      openaiApiKey: "",
+      specificActivities: "",
+      mustVisitPlaces: "",
     },
   })
 
@@ -199,7 +209,7 @@ export function TravelPlannerForm() {
     <Card className="mx-auto max-w-3xl overflow-hidden border-none bg-white/95 shadow-2xl backdrop-blur-sm dark:bg-gray-800/95 rounded-2xl">
       <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-10 text-white relative">
         {/* Background pattern for header */}
-        <div className="absolute inset-0 bg-[url('/images/travel-pattern.png')] opacity-10"></div>
+        <div className="absolute inset-0 bg-[url('/images/world-map-dots.svg')] opacity-10"></div>
         
         <div className="relative z-10">
           <div className="mb-3 flex items-center">
