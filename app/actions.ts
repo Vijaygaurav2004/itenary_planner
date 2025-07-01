@@ -2,292 +2,205 @@
 
 import { z } from "zod"
 
+// Define the schema for the form data
 const formSchema = z.object({
-  // Destination & Dates
-  destination: z.string().min(2, {
-    message: "Destination must be at least 2 characters.",
-  }),
-  startDate: z.date(),
-  endDate: z.date(),
-  
-  // Budget
-  totalBudget: z.string().optional(),
-  budgetType: z.enum(["budget", "mid-range", "luxury"]),
-  spendingPriorities: z.string().optional(),
-  
-  // Travel Preferences
-  interests: z.array(z.string()).min(1, {
-    message: "Select at least one interest.",
-  }),
-  foodPreferences: z.string().optional(),
-  travelPace: z.enum(["relaxed", "moderate", "packed"]),
-  customPace: z.string().optional(),
-  
-  // Accommodation
-  accommodation: z.enum(["hotel", "hostel", "airbnb", "any"]),
-  accommodationLocation: z.string().optional(),
-  
-  // Transportation
-  transportation: z.array(z.string()).min(1, {
-    message: "Select at least one transportation option.",
-  }),
-  arrivalDetails: z.string().optional(),
-  departureDetails: z.string().optional(),
-  
-  // Personal Details
-  travelerProfile: z.enum(["solo", "couple", "family", "group"]),
-  numberOfTravelers: z.number().min(1),
-  ageGroups: z.array(z.string()).optional(),
-  specialRequirements: z.string().optional(),
-  openaiApiKey: z.string().optional(),
-  
-  // Must-Have Experiences
-  specificActivities: z.string().optional(),
-  mustVisitPlaces: z.string().optional(),
+  destination: z.string().min(2, "Destination is required"),
+  startDate: z.string(),
+  endDate: z.string(),
+  budget: z.number().min(1, "Budget is required"),
+  interests: z.string().optional(),
+  travelStyle: z.string().optional(),
+  isCollaborative: z.boolean().default(false),
+  collaboratorEmails: z.string().optional(),
+  inspirationUrl: z.string().optional(),
 })
 
-type FormValues = z.infer<typeof formSchema>
+// Define the types for the itinerary data structure
+export interface Activity {
+  id: string
+  time: string
+  title: string
+  description: string
+  location: string
+  type: "attraction" | "food" | "transport" | "accommodation" | "other"
+  duration: string
+  cost?: string
+  rating?: number
+  image?: string
+  notes?: string
+}
 
-export async function generateItinerary(data: FormValues): Promise<string> {
+export interface DayPlan {
+  day: number
+  date: string
+  activities: Activity[]
+}
+
+export interface Itinerary {
+  id: string
+  title: string
+  destination: string
+  startDate: string
+  endDate: string
+  days: DayPlan[]
+  totalCost: string
+  coverImage: string
+}
+
+export async function generateItinerary(formData: z.infer<typeof formSchema>): Promise<Itinerary> {
   try {
-    // Validate the input data
-    formSchema.parse(data)
+    // Parse and validate the form data
+    const validatedData = formSchema.parse(formData)
     
-    // Calculate trip duration
-    const startDate = new Date(data.startDate)
-    const endDate = new Date(data.endDate)
-    const tripDuration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    // In a real application, you would call an AI service here
+    // For now, we'll return a mock itinerary based on the destination
     
-    // Validate trip duration
-    if (tripDuration < 1) {
-      throw new Error("Trip duration must be at least 1 day")
+    // Format dates
+    const startDate = new Date(validatedData.startDate)
+    const endDate = new Date(validatedData.endDate)
+    
+    // Calculate the number of days
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    // Generate a mock itinerary
+    const mockItinerary: Itinerary = {
+      id: `trip-${Date.now()}`,
+      title: `Exploring ${validatedData.destination}`,
+      destination: validatedData.destination,
+      startDate: validatedData.startDate,
+      endDate: validatedData.endDate,
+      totalCost: `$${validatedData.budget.toLocaleString()}`,
+      coverImage: getCoverImageForDestination(validatedData.destination),
+      days: generateMockDays(diffDays, startDate, validatedData.destination)
     }
     
-    if (tripDuration > 30) {
-      throw new Error("Trip duration cannot exceed 30 days due to API limitations")
-    }
-
-    // Format dates for the prompt
-    const formatDate = (date: Date) =>
-      date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-
-    // Construct the prompt for Perplexity
-    const prompt = `
-      Create a detailed travel itinerary for a trip to ${data.destination}.
-      
-      TRAVELER DETAILS:
-      - Profile: ${data.travelerProfile}
-      - Number of travelers: ${data.numberOfTravelers}
-      ${data.ageGroups && data.ageGroups.length > 0 ? `- Age groups: ${data.ageGroups.join(", ")}` : ""}
-      ${data.specialRequirements ? `- Special needs: ${data.specialRequirements}` : ""}
-      
-      TRIP DETAILS:
-      - Dates: ${formatDate(startDate)} to ${formatDate(endDate)} (${tripDuration} days)
-      ${data.arrivalDetails ? `- Arrival: ${data.arrivalDetails}` : ""}
-      ${data.departureDetails ? `- Departure: ${data.departureDetails}` : ""}
-      
-      BUDGET:
-      - Budget type: ${data.budgetType}
-      ${data.totalBudget ? `- Total budget: ${data.totalBudget}` : ""}
-      ${data.spendingPriorities ? `- Spending priorities: ${data.spendingPriorities}` : ""}
-      
-      PREFERENCES:
-      - Interests: ${data.interests.join(", ")}
-      - Food: ${data.foodPreferences || "No specific preferences"}
-      - Travel pace: ${data.travelPace}
-      ${data.customPace ? `- Custom pace: ${data.customPace}` : ""}
-      
-      ACCOMMODATION:
-      - Type: ${data.accommodation}
-      ${data.accommodationLocation ? `- Preferred location: ${data.accommodationLocation}` : ""}
-      
-      TRANSPORTATION:
-      - Preferred modes: ${data.transportation.join(", ")}
-      
-      MUST-HAVE EXPERIENCES:
-      ${data.specificActivities ? `- Activities: ${data.specificActivities}` : ""}
-      ${data.mustVisitPlaces ? `- Places to visit: ${data.mustVisitPlaces}` : ""}
-      
-      Please provide a comprehensive itinerary with the following sections:
-      
-      1. OVERVIEW: A brief summary of the trip with the destination highlights and overall experience.
-      
-      2. DAY-BY-DAY ITINERARY: Detailed plan for each day (DAY 1, DAY 2, etc.) with:
-         - Morning activities
-         - Lunch recommendations
-         - Afternoon activities
-         - Evening plans and dinner options
-         - Estimated timing for each activity
-      
-      3. ACCOMMODATION: Recommended places to stay based on preferences, with:
-         - Names of specific accommodations
-         - Brief descriptions and key features
-         - Approximate price range
-         - Neighborhood information
-      
-      4. RESTAURANTS: Recommended places to eat matching food preferences, with:
-         - Mix of popular and hidden gem restaurants
-         - Cuisine specialties
-         - Price ranges
-         - Any must-try dishes
-      
-      5. TRANSPORTATION: How to get around, with:
-         - Best ways to travel between attractions
-         - Tips for local transportation
-         - Any transportation passes or deals
-      
-      6. ADDITIONAL TIPS: Useful information including:
-         - Local customs and etiquette
-         - Weather considerations
-         - Safety tips
-         - Money-saving advice
-         - Off-the-beaten-path recommendations
-      
-      Format the response with clear section headers and bullet points for easy reading.
-    `
-
-    let initialItinerary = '';
-
-    // First, get data from Perplexity API
-    if (!process.env.PERPLEXITY_API_KEY) {
-      console.error("Perplexity API key is not set")
-      throw new Error("API key configuration error")
-    }
-
-    // Call Perplexity API to get initial research
-    const perplexityResponse = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.PERPLEXITY_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "sonar-deep-research",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
-    })
-
-    if (!perplexityResponse.ok) {
-      const errorData = await perplexityResponse.json().catch(() => null)
-      console.error("Perplexity API error:", errorData || perplexityResponse.statusText)
-      
-      // Handle different error types
-      if (perplexityResponse.status === 401) {
-        throw new Error("Invalid API key. Please check your configuration.")
-      } else if (perplexityResponse.status === 429) {
-        throw new Error("Rate limit exceeded. Please try again later.")
-      } else {
-        throw new Error(`API error: ${perplexityResponse.status} - ${perplexityResponse.statusText}`)
-      }
-    }
-
-    const perplexityResult = await perplexityResponse.json()
-    
-    // Validate response format
-    if (!perplexityResult.choices || !perplexityResult.choices[0] || !perplexityResult.choices[0].message || !perplexityResult.choices[0].message.content) {
-      console.error("Invalid response format from Perplexity API:", perplexityResult)
-      throw new Error("Received invalid response format from AI service")
-    }
-    
-    initialItinerary = perplexityResult.choices[0].message.content;
-    
-    // If OpenAI API key is provided or use default test key, enhance the itinerary with ChatGPT
-    const openaiApiKey = data.openaiApiKey; // Default test key
-    if (openaiApiKey) {
-      // Construct the ChatGPT prompt to enhance the Perplexity data
-      const enhancementPrompt = `
-        I'd like you to enhance and redesign this travel itinerary to make it more engaging, vibrant, and personalized.
-        
-        The original itinerary from Perplexity is below:
-        
-        ${initialItinerary}
-        
-        Please improve this itinerary with:
-        
-        1. More immersive descriptions of attractions and experiences
-        2. More authentic local insights and hidden gems
-        3. Highly personalized recommendations based on the traveler profile: ${data.travelerProfile}
-        4. Better organization with clear headings and a more visual-friendly format
-        5. Add time estimates that match the preferred pace: ${data.travelPace}
-        6. Ensure all restaurant recommendations have distinctive qualities and match the food preferences
-        7. Include memorable photo opportunities and Instagram-worthy spots
-        8. Add cultural context that enriches the experience
-        
-        Keep the same overall structure with the sections: OVERVIEW, DAY-BY-DAY ITINERARY, ACCOMMODATION, RESTAURANTS, TRANSPORTATION, and ADDITIONAL TIPS.
-        
-        Make the final itinerary visually organized, easy to follow, and inspiring!
-      `;
-      
-      // Call OpenAI API for enhanced itinerary
-      try {
-        const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openaiApiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gpt-4",
-            messages: [
-              {
-                role: "system",
-                content: "You are a travel design expert who creates beautiful, engaging, and well-structured travel itineraries that feel personalized and inspiring."
-              },
-              {
-                role: "user",
-                content: enhancementPrompt,
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 4000,
-          }),
-        });
-        
-        if (!openaiResponse.ok) {
-          console.error("OpenAI API error:", openaiResponse.status, openaiResponse.statusText);
-          // If OpenAI fails, we'll just return the Perplexity result
-          return initialItinerary;
-        }
-        
-        const openaiResult = await openaiResponse.json();
-        
-        if (openaiResult.choices && openaiResult.choices[0] && openaiResult.choices[0].message && openaiResult.choices[0].message.content) {
-          return openaiResult.choices[0].message.content;
-        } else {
-          // If we can't parse OpenAI result, return the Perplexity result
-          return initialItinerary;
-        }
-      } catch (openaiError) {
-        console.error("Error with OpenAI processing:", openaiError);
-        // Return the Perplexity result if OpenAI fails
-        return initialItinerary;
-      }
-    } else {
-      // If no OpenAI API key, just return the Perplexity result
-      return initialItinerary;
-    }
+    return mockItinerary
   } catch (error) {
     console.error("Error generating itinerary:", error)
-    
-    // Return user-friendly error message
-    if (error instanceof z.ZodError) {
-      return "Invalid input data. Please check your travel details and try again."
-    } else if (error instanceof Error) {
-      return `Sorry, we couldn't generate your itinerary: ${error.message}`
-    }
-    
-    return "Sorry, we couldn't generate your itinerary at this time. Please try again later."
+    throw new Error("Failed to generate itinerary. Please try again.")
   }
+}
+
+// Helper function to generate mock days for the itinerary
+function generateMockDays(numDays: number, startDate: Date, destination: string): DayPlan[] {
+  const days: DayPlan[] = []
+  
+  for (let i = 0; i < numDays; i++) {
+    const currentDate = new Date(startDate)
+    currentDate.setDate(startDate.getDate() + i)
+    
+    days.push({
+      day: i + 1,
+      date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      activities: generateMockActivities(i + 1, destination)
+    })
+  }
+  
+  return days
+}
+
+// Helper function to generate mock activities for each day
+function generateMockActivities(day: number, destination: string): Activity[] {
+  const activities: Activity[] = []
+  
+  // Morning activity
+  activities.push({
+    id: `act-${day}-1`,
+    time: "09:00",
+    title: day === 1 ? `Arrival and Check-in` : `Exploring ${destination} - Day ${day}`,
+    description: day === 1 
+      ? `Welcome to ${destination}! After checking in to your accommodation, take some time to relax and get settled.` 
+      : `Start your day with a delicious breakfast before heading out to explore more of ${destination}.`,
+    location: destination,
+    type: day === 1 ? "accommodation" : "attraction",
+    duration: "2 hours",
+    image: `https://source.unsplash.com/random/600x400/?${destination.toLowerCase().replace(/\s+/g, ',')},${day === 1 ? 'hotel' : 'landmark'}`
+  })
+  
+  // Lunch activity
+  activities.push({
+    id: `act-${day}-2`,
+    time: "12:30",
+    title: `Lunch at Local Restaurant`,
+    description: `Enjoy a delicious meal at one of the popular local restaurants in ${destination}.`,
+    location: `${destination} City Center`,
+    type: "food",
+    duration: "1.5 hours",
+    cost: "$20-30",
+    rating: 4.5,
+    image: `https://source.unsplash.com/random/600x400/?${destination.toLowerCase().replace(/\s+/g, ',')},food,restaurant`
+  })
+  
+  // Afternoon activity
+  activities.push({
+    id: `act-${day}-3`,
+    time: "14:00",
+    title: `Visit to ${getRandomAttraction(destination, day)}`,
+    description: `Explore one of the most famous attractions in ${destination}.`,
+    location: destination,
+    type: "attraction",
+    duration: "3 hours",
+    cost: "$15",
+    rating: 4.8,
+    image: `https://source.unsplash.com/random/600x400/?${destination.toLowerCase().replace(/\s+/g, ',')},attraction`
+  })
+  
+  // Dinner activity
+  activities.push({
+    id: `act-${day}-4`,
+    time: "19:00",
+    title: `Dinner at ${getRandomRestaurant(destination, day)}`,
+    description: `End your day with a wonderful dinner experience.`,
+    location: `${destination} Downtown`,
+    type: "food",
+    duration: "2 hours",
+    cost: "$30-50",
+    rating: 4.7,
+    image: `https://source.unsplash.com/random/600x400/?${destination.toLowerCase().replace(/\s+/g, ',')},dinner,restaurant`
+  })
+  
+  return activities
+}
+
+// Helper function to get a random attraction name
+function getRandomAttraction(destination: string, day: number): string {
+  const attractions = [
+    `${destination} Historical Museum`,
+    `${destination} National Park`,
+    `${destination} Art Gallery`,
+    `${destination} Cathedral`,
+    `${destination} Botanical Gardens`,
+    `${destination} Castle`,
+    `${destination} Zoo`,
+    `${destination} Aquarium`,
+    `${destination} Science Center`,
+    `Old Town ${destination}`
+  ]
+  
+  return attractions[day % attractions.length]
+}
+
+// Helper function to get a random restaurant name
+function getRandomRestaurant(destination: string, day: number): string {
+  const restaurants = [
+    `The ${destination} Kitchen`,
+    `${destination} Bistro`,
+    `Taste of ${destination}`,
+    `${destination} Grill`,
+    `${destination} Fine Dining`,
+    `Local Flavors`,
+    `${destination} Street Food`,
+    `${destination} Fusion`,
+    `Traditional ${destination}`,
+    `${destination} Seafood`
+  ]
+  
+  return restaurants[(day + 3) % restaurants.length]
+}
+
+// Helper function to get a cover image for the destination
+function getCoverImageForDestination(destination: string): string {
+  // In a real application, you would use a more sophisticated method to get relevant images
+  return `https://source.unsplash.com/random/1200x800/?${destination.toLowerCase().replace(/\s+/g, ',')},travel,landscape`
 }
