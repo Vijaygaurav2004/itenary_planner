@@ -37,18 +37,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // Form schema with Zod
 const formSchema = z.object({
   destination: z.string().min(2, "Destination is required"),
-  startDate: z.date({
-    required_error: "Start date is required",
-  }),
-  endDate: z.date({
-    required_error: "End date is required",
-  }),
+  startDate: z.date({ required_error: "Start date is required" }),
+  endDate: z.date({ required_error: "End date is required" }),
   budget: z.number().min(500, "Budget must be at least $500"),
-  interests: z.string().optional(),
-  travelStyle: z.string().optional(),
+  interests: z.string().default("").nullable(),
+  travelStyle: z.string().default("").nullable(),
   isCollaborative: z.boolean().default(false),
-  collaboratorEmails: z.string().optional(),
-  inspirationUrl: z.string().optional(),
+  collaboratorEmails: z.string().default("").nullable(),
+  inspirationUrl: z.string().default("").nullable(),
+  travelDays: z.number().default(0),
+  openToSuggestions: z.boolean().default(false),
+  groupSize: z.number().min(1, "At least one person required").default(1),
+  ageGroups: z.array(z.string()).default([]),
+  customAgeGroup: z.string().default(""),
+  groupType: z.enum(["solo", "couple", "family", "friends"]).default("solo"),
+  hasChildren: z.boolean().default(false),
+  hasElderly: z.boolean().default(false),
+  hasMobilityNeeds: z.boolean().default(false),
+  dietaryRestrictions: z.string().default("").nullable(),
+  allergies: z.string().default("").nullable(),
+  spendingPriority: z.enum(["accommodation", "activities", "food", "transportation"]).default("accommodation"),
+  accommodationType: z.string().default("").nullable(),
+  accommodationRequirements: z.string().default("").nullable(),
+  accommodationUnique: z.boolean().default(false),
+  foodPreferences: z.string().default("").nullable(),
+  localFoodInterest: z.boolean().default(false),
+  internationalFoodInterest: z.boolean().default(false),
+  mainInterests: z.string().default("").nullable(),
+  mustSee: z.string().default("").nullable(),
+  popularVsHidden: z.enum(["popular", "hidden", "both"]).default("both"),
+  itineraryPace: z.enum(["relaxed", "packed"]).default("relaxed"),
+  wantsFreeTime: z.boolean().default(false),
+  transportModes: z.string().default("").nullable(),
+  multiModal: z.boolean().default(false),
+  specialOccasion: z.string().default("").nullable(),
+  tripTheme: z.string().default("").nullable(),
+  beenBefore: z.boolean().default(false),
+  likesDislikes: z.string().default("").nullable(),
+  realTimeAdapt: z.boolean().default(false),
+  wantsNotifications: z.boolean().default(false),
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -58,18 +85,52 @@ export function TravelPlannerForm() {
   const [generatedItinerary, setGeneratedItinerary] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<string>("basic")
   const [formStep, setFormStep] = useState(0)
+  const [otherInterest, setOtherInterest] = useState("")
   
   // Initialize form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       destination: "",
+      startDate: undefined,
+      endDate: undefined,
       budget: 1000,
       interests: "",
       travelStyle: "",
       isCollaborative: false,
       collaboratorEmails: "",
       inspirationUrl: "",
+      travelDays: 0,
+      openToSuggestions: false,
+      groupSize: 1,
+      ageGroups: [],
+      customAgeGroup: "",
+      groupType: "solo",
+      hasChildren: false,
+      hasElderly: false,
+      hasMobilityNeeds: false,
+      dietaryRestrictions: "",
+      allergies: "",
+      spendingPriority: "accommodation",
+      accommodationType: "",
+      accommodationRequirements: "",
+      accommodationUnique: false,
+      foodPreferences: "",
+      localFoodInterest: false,
+      internationalFoodInterest: false,
+      mainInterests: "",
+      mustSee: "",
+      popularVsHidden: "both",
+      itineraryPace: "relaxed",
+      wantsFreeTime: false,
+      transportModes: "",
+      multiModal: false,
+      specialOccasion: "",
+      tripTheme: "",
+      beenBefore: false,
+      likesDislikes: "",
+      realTimeAdapt: false,
+      wantsNotifications: false,
     },
     mode: "onChange",
   })
@@ -165,21 +226,30 @@ export function TravelPlannerForm() {
   }
   
   // Form steps configuration
-  const formSteps = [
+  const formSteps: {
+    title: string;
+    description: string;
+    fields: (keyof FormValues)[];
+  }[] = [
     {
       title: "Destination & Dates",
       description: "Where and when do you want to travel?",
-      fields: ["destination", "startDate", "endDate"],
+      fields: ["destination", "startDate", "endDate", "travelDays", "openToSuggestions"],
     },
     {
-      title: "Preferences",
-      description: "Tell us about your travel style and interests",
-      fields: ["budget", "interests", "travelStyle"],
+      title: "Group & Preferences",
+      description: "Tell us about your group and preferences",
+      fields: [
+        "groupSize", "ageGroups", "groupType", "hasChildren", "hasElderly", "hasMobilityNeeds", "dietaryRestrictions", "allergies",
+        "budget", "spendingPriority", "accommodationType", "accommodationRequirements", "accommodationUnique", "foodPreferences", "localFoodInterest", "internationalFoodInterest", "mainInterests", "mustSee", "popularVsHidden", "itineraryPace", "wantsFreeTime", "transportModes", "multiModal"
+      ],
     },
     {
-      title: "Collaboration & Inspiration",
-      description: "Add collaborators or inspiration sources",
-      fields: ["isCollaborative", "collaboratorEmails", "inspirationUrl"],
+      title: "Special & Experience",
+      description: "Special occasions, themes, and past travel",
+      fields: [
+        "specialOccasion", "tripTheme", "beenBefore", "likesDislikes", "realTimeAdapt", "wantsNotifications", "isCollaborative", "collaboratorEmails", "inspirationUrl"
+      ],
     },
   ]
   
@@ -190,6 +260,12 @@ export function TravelPlannerForm() {
     setFormStep(0)
     setActiveTab("basic")
   }
+  
+  // Add at the top of the component
+  const AGE_GROUP_OPTIONS = ["Infants (0-2)", "Children (3-12)", "Teenagers (13-17)", "Adults (18-64)", "Seniors (65+)", "Other"];
+  const INTEREST_OPTIONS = [
+    "Beaches", "Mountains", "Adventure", "Culture", "History", "Nature", "Shopping", "Nightlife", "Food", "Wildlife", "Relaxation", "Photography"
+  ];
   
   if (generatedItinerary) {
     return (
@@ -395,9 +471,11 @@ export function TravelPlannerForm() {
                                       form.clearErrors("endDate");
                                     }
                                   }}
-                                  disabled={(date) =>
-                                    date < new Date()
-                                  }
+                                  disabled={(date) => {
+                                    const startDate = form.getValues("startDate");
+                                    if (!startDate) return date < new Date();
+                                    return date < startDate;
+                                  }}
                                   initialFocus
                                 />
                               </PopoverContent>
@@ -417,18 +495,18 @@ export function TravelPlannerForm() {
                       name="budget"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Budget (USD)</FormLabel>
+                          <FormLabel>Budget (INR)</FormLabel>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-500 dark:text-gray-400">$500</span>
-                              <span className="font-medium">${field.value}</span>
-                              <span className="text-sm text-gray-500 dark:text-gray-400">$10,000+</span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">₹5,000</span>
+                              <span className="font-medium">₹{field.value?.toLocaleString()}</span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">₹5,00,000+</span>
                             </div>
                             <FormControl>
                               <Slider
-                                min={500}
-                                max={10000}
-                                step={100}
+                                min={5000}
+                                max={500000}
+                                step={1000}
                                 defaultValue={[field.value]}
                                 onValueChange={(values) => field.onChange(values[0])}
                               />
@@ -442,22 +520,68 @@ export function TravelPlannerForm() {
                     <FormField
                       control={form.control}
                       name="interests"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Interests</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="What are you interested in? (e.g., museums, hiking, food, nightlife)"
-                              className="resize-none"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Help us tailor your itinerary to your interests.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        // Parse the value as an array
+                        const valueArray = field.value ? field.value.split(",").map(s => s.trim()).filter(Boolean) : [];
+                        const isOtherChecked = valueArray.includes("Other");
+                        return (
+                          <FormItem>
+                            <FormLabel>Interests</FormLabel>
+                            <FormControl>
+                              <div className="flex flex-wrap gap-3">
+                                {INTEREST_OPTIONS.map(option => (
+                                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={valueArray.includes(option)}
+                                      onChange={e => {
+                                        let newArr = valueArray.filter(v => v !== option);
+                                        if (e.target.checked) newArr.push(option);
+                                        field.onChange(newArr.join(", "));
+                                      }}
+                                    />
+                                    {option}
+                                  </label>
+                                ))}
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isOtherChecked}
+                                    onChange={e => {
+                                      let newArr = valueArray.filter(v => v !== "Other");
+                                      if (e.target.checked) newArr.push("Other");
+                                      field.onChange(newArr.join(", "));
+                                    }}
+                                  />
+                                  Other
+                                </label>
+                                {isOtherChecked && (
+                                  <Input
+                                    className="w-48"
+                                    placeholder="Please specify"
+                                    value={otherInterest}
+                                    onChange={e => setOtherInterest(e.target.value)}
+                                    onBlur={() => {
+                                      // Add or update the custom interest in the value
+                                      let newArr = valueArray.filter(v => v !== "Other" && !v.startsWith("Other:"));
+                                      if (otherInterest.trim()) {
+                                        newArr.push(`Other:${otherInterest.trim()}`);
+                                      } else {
+                                        newArr.push("Other");
+                                      }
+                                      field.onChange(newArr.join(", "));
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            </FormControl>
+                            <FormDescription>
+                              Select all that apply. If you have other interests, specify them.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                     
                     <FormField
@@ -497,6 +621,73 @@ export function TravelPlannerForm() {
                           <FormMessage />
                         </FormItem>
                       )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="groupSize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of People in Group</FormLabel>
+                          <FormControl>
+                            <div className="flex items-center gap-2">
+                              <Button type="button" variant="outline" onClick={() => field.onChange(Math.max(1, field.value - 1))}>-</Button>
+                              <Input
+                                type="number"
+                                min={1}
+                                value={field.value}
+                                onChange={e => field.onChange(Number(e.target.value))}
+                                className="w-16 text-center"
+                              />
+                              <Button type="button" variant="outline" onClick={() => field.onChange(field.value + 1)}>+</Button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="ageGroups"
+                      render={({ field }) => {
+                        const valueArray = field.value || [];
+                        const isOtherChecked = valueArray.includes("Other");
+                        return (
+                          <FormItem>
+                            <FormLabel>Age Groups</FormLabel>
+                            <FormControl>
+                              <div className="flex flex-wrap gap-3">
+                                {AGE_GROUP_OPTIONS.map(option => (
+                                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={valueArray.includes(option)}
+                                      onChange={e => {
+                                        let newArr = valueArray.filter(v => v !== option);
+                                        if (e.target.checked) newArr.push(option);
+                                        field.onChange(newArr);
+                                      }}
+                                    />
+                                    {option}
+                                  </label>
+                                ))}
+                                {isOtherChecked && (
+                                  <Input
+                                    className="w-48"
+                                    placeholder="Please specify"
+                                    {...form.register("customAgeGroup")}
+                                  />
+                                )}
+                              </div>
+                            </FormControl>
+                            <FormDescription>
+                              Select all that apply. If you have other age groups, specify them.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                   </div>
                 )}
