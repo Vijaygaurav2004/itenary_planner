@@ -14,11 +14,23 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [animateIcon, setAnimateIcon] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'code'>("signin");
+  const [form, setForm] = useState({
+    emailOrPhone: "",
+    password: "",
+    code: "",
+    name: "",
+    confirmPassword: ""
+  });
+  const [error, setError] = useState("");
   
   // Handle scroll effect
   useEffect(() => {
@@ -94,12 +106,12 @@ export function Header() {
           <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
             
-            <Button variant="outline" size="sm" className="rounded-full border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 group">
+            <Button variant="outline" size="sm" className="rounded-full border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 group" onClick={() => setAuthOpen(true)}>
               <span className="relative z-10">Sign In</span>
               <span className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-400/0 via-blue-400/0 to-indigo-400/0 group-hover:from-blue-400/10 group-hover:via-blue-400/20 group-hover:to-indigo-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></span>
             </Button>
             
-            <Button size="sm" className="rounded-full relative overflow-hidden group">
+            <Button size="sm" className="rounded-full relative overflow-hidden group" onClick={() => setAuthOpen(true)}>
               <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:from-blue-700 group-hover:to-indigo-700"></span>
               <span className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 group-hover:opacity-100 blur-xl transition-opacity"></span>
               <span className="relative flex items-center">
@@ -153,19 +165,66 @@ export function Header() {
                 <PlaneTakeoff className="h-4 w-4" />
                 My Trips
               </Link>
-              <div className="pt-2 flex flex-col space-y-2">
-                <Button variant="outline" size="sm" className="justify-center rounded-full border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                  Sign In
-                </Button>
-                <Button size="sm" className="justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
-                  <Rocket className="h-4 w-4 mr-1" />
-                  Get Started
-                </Button>
-              </div>
             </nav>
           </div>
         </div>
       )}
+
+      {/* Auth Dialog */}
+      <Dialog open={authOpen} onOpenChange={setAuthOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{authMode === 'signup' ? 'Create Account' : authMode === 'code' ? 'Enter Code' : 'Sign In'}</DialogTitle>
+            <DialogDescription>
+              {authMode === 'signup' ? 'Sign up to create your account.' : authMode === 'code' ? 'Enter the code sent to your email or phone.' : 'Sign in to your account.'}
+            </DialogDescription>
+          </DialogHeader>
+          {authMode === 'signin' && (
+            <div className="space-y-4">
+              <Input placeholder="Email or Phone" value={form.emailOrPhone} onChange={e => setForm(f => ({ ...f, emailOrPhone: e.target.value }))} />
+              <Input placeholder="Password" type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+              <div className="flex justify-between text-xs">
+                <button type="button" className="text-blue-600 hover:underline" onClick={() => setAuthMode('code')}>Sign in with code</button>
+                <button type="button" className="text-blue-600 hover:underline" onClick={() => setAuthMode('signup')}>Create Account</button>
+              </div>
+              {error && <div className="text-red-500 text-xs">{error}</div>}
+              <DialogFooter>
+                <Button onClick={() => {/* handle sign in logic */}}>Sign In</Button>
+              </DialogFooter>
+            </div>
+          )}
+          {authMode === 'code' && (
+            <div className="space-y-4">
+              <Input placeholder="Email or Phone" value={form.emailOrPhone} onChange={e => setForm(f => ({ ...f, emailOrPhone: e.target.value }))} />
+              <Input placeholder="Code" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} />
+              <div className="flex justify-between text-xs">
+                <button type="button" className="text-blue-600 hover:underline" onClick={() => setAuthMode('signin')}>Back to password</button>
+                <button type="button" className="text-blue-600 hover:underline" onClick={() => setAuthMode('signup')}>Create Account</button>
+              </div>
+              {error && <div className="text-red-500 text-xs">{error}</div>}
+              <DialogFooter>
+                <Button onClick={() => {/* handle code sign in logic */}}>Sign In</Button>
+              </DialogFooter>
+            </div>
+          )}
+          {authMode === 'signup' && (
+            <div className="space-y-4">
+              <Input placeholder="Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              <Input placeholder="Email or Phone" value={form.emailOrPhone} onChange={e => setForm(f => ({ ...f, emailOrPhone: e.target.value }))} />
+              <Input placeholder="Password" type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+              <Input placeholder="Confirm Password" type="password" value={form.confirmPassword} onChange={e => setForm(f => ({ ...f, confirmPassword: e.target.value }))} />
+              <Input placeholder="Code (sent to your email/phone)" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} />
+              <div className="flex justify-between text-xs">
+                <button type="button" className="text-blue-600 hover:underline" onClick={() => setAuthMode('signin')}>Already have an account?</button>
+              </div>
+              {error && <div className="text-red-500 text-xs">{error}</div>}
+              <DialogFooter>
+                <Button onClick={() => {/* handle sign up logic */}}>Sign Up</Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }
