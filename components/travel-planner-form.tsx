@@ -37,45 +37,57 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 // Form schema with Zod
 const formSchema = z.object({
   destination: z.string().min(2, "Destination is required"),
-  startDate: z.date({ required_error: "Start date is required" }),
-  endDate: z.date({ required_error: "End date is required" }),
+  startDate: z.date({ required_error: "Start date is required" }).nullable().default(null),
+  endDate: z.date({ required_error: "End date is required" }).nullable().default(null),
   budget: z.number().min(500, "Budget must be at least $500"),
-  interests: z.string().default("").nullable(),
-  travelStyle: z.string().default("").nullable(),
+  interests: z.string().nullable().default(""),
+  travelStyle: z.string().nullable().default(""),
   isCollaborative: z.boolean().default(false),
-  collaboratorEmails: z.string().default("").nullable(),
-  inspirationUrl: z.string().default("").nullable(),
+  collaboratorEmails: z.string().nullable().default(""),
+  inspirationUrl: z.string().nullable().default(""),
   travelDays: z.number().default(0),
   openToSuggestions: z.boolean().default(false),
   groupSize: z.number().min(1, "At least one person required").default(1),
   ageGroups: z.array(z.string()).default([]),
-  customAgeGroup: z.string().default(""),
+  customAgeGroup: z.string().nullable().default(""),
   groupType: z.enum(["solo", "couple", "family", "friends"]).default("solo"),
   hasChildren: z.boolean().default(false),
   hasElderly: z.boolean().default(false),
   hasMobilityNeeds: z.boolean().default(false),
-  dietaryRestrictions: z.string().default("").nullable(),
-  allergies: z.string().default("").nullable(),
+  dietaryRestrictions: z.string().nullable().default(""),
+  allergies: z.string().nullable().default(""),
   spendingPriority: z.enum(["accommodation", "activities", "food", "transportation"]).default("accommodation"),
-  accommodationType: z.string().default("").nullable(),
-  accommodationRequirements: z.string().default("").nullable(),
+  accommodationType: z.string().nullable().default(""),
+  accommodationRequirements: z.string().nullable().default(""),
   accommodationUnique: z.boolean().default(false),
-  foodPreferences: z.string().default("").nullable(),
+  foodPreferences: z.string().nullable().default(""),
   localFoodInterest: z.boolean().default(false),
   internationalFoodInterest: z.boolean().default(false),
-  mainInterests: z.string().default("").nullable(),
-  mustSee: z.string().default("").nullable(),
+  mainInterests: z.string().nullable().default(""),
+  mustSee: z.string().nullable().default(""),
   popularVsHidden: z.enum(["popular", "hidden", "both"]).default("both"),
   itineraryPace: z.enum(["relaxed", "packed"]).default("relaxed"),
   wantsFreeTime: z.boolean().default(false),
-  transportModes: z.string().default("").nullable(),
+  transportModes: z.string().nullable().default(""),
   multiModal: z.boolean().default(false),
-  specialOccasion: z.string().default("").nullable(),
-  tripTheme: z.string().default("").nullable(),
+  specialOccasion: z.string().nullable().default(""),
+  tripTheme: z.string().nullable().default(""),
   beenBefore: z.boolean().default(false),
-  likesDislikes: z.string().default("").nullable(),
+  likesDislikes: z.string().nullable().default(""),
   realTimeAdapt: z.boolean().default(false),
   wantsNotifications: z.boolean().default(false),
+  preferredDestinations: z.string().nullable().default(""),
+  openToAISuggestions: z.boolean().default(false),
+  mustVisit: z.string().nullable().default(""),
+  previouslyVisited: z.string().nullable().default(""),
+  accommodationTypeSelect: z.string().nullable().default(""),
+  desiredAmenities: z.array(z.string()).default([]),
+  locationPreferences: z.string().nullable().default(""),
+  roomConfig: z.string().nullable().default(""),
+  primaryTransportModes: z.array(z.string()).default([]),
+  rentalCarNeeds: z.string().nullable().default(""),
+  drivingComfort: z.boolean().default(false),
+  accessibilityNeeds: z.string().nullable().default("")
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -92,8 +104,8 @@ export function TravelPlannerForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       destination: "",
-      startDate: undefined,
-      endDate: undefined,
+      startDate: null,
+      endDate: null,
       budget: 1000,
       interests: "",
       travelStyle: "",
@@ -131,6 +143,18 @@ export function TravelPlannerForm() {
       likesDislikes: "",
       realTimeAdapt: false,
       wantsNotifications: false,
+      preferredDestinations: "",
+      openToAISuggestions: false,
+      mustVisit: "",
+      previouslyVisited: "",
+      accommodationTypeSelect: "",
+      desiredAmenities: [],
+      locationPreferences: "",
+      roomConfig: "",
+      primaryTransportModes: [],
+      rentalCarNeeds: "",
+      drivingComfort: false,
+      accessibilityNeeds: "",
     },
     mode: "onChange",
   })
@@ -138,7 +162,7 @@ export function TravelPlannerForm() {
   // Handle form submission
   const onSubmit = async (data: FormValues) => {
     // Validate end date is after start date
-    if (data.endDate <= data.startDate) {
+    if (data.endDate && data.startDate && data.endDate <= data.startDate) {
       form.setError("endDate", {
         type: "manual",
         message: "End date must be after start date",
@@ -180,8 +204,8 @@ export function TravelPlannerForm() {
       // Call the server action to generate the itinerary
       const result = await generateItinerary({
         destination: data.destination,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate.toISOString(),
+        startDate: data.startDate?.toISOString() || null,
+        endDate: data.endDate?.toISOString() || null,
         budget: data.budget,
         interests: data.interests || "",
         travelStyle: data.travelStyle || "",
@@ -207,7 +231,7 @@ export function TravelPlannerForm() {
     
     // Additional validation for end date
     if (formStep === 0 && form.getValues("startDate") && form.getValues("endDate")) {
-      if (form.getValues("endDate") <= form.getValues("startDate")) {
+      if (form.getValues("endDate") && form.getValues("startDate") && form.getValues("endDate") <= form.getValues("startDate")) {
         form.setError("endDate", {
           type: "manual",
           message: "End date must be after start date",
@@ -234,21 +258,21 @@ export function TravelPlannerForm() {
     {
       title: "Destination & Dates",
       description: "Where and when do you want to travel?",
-      fields: ["destination", "startDate", "endDate", "travelDays", "openToSuggestions"],
+      fields: ["destination", "preferredDestinations", "startDate", "endDate", "travelDays", "openToSuggestions", "openToAISuggestions"],
     },
     {
       title: "Group & Preferences",
       description: "Tell us about your group and preferences",
       fields: [
         "groupSize", "ageGroups", "groupType", "hasChildren", "hasElderly", "hasMobilityNeeds", "dietaryRestrictions", "allergies",
-        "budget", "spendingPriority", "accommodationType", "accommodationRequirements", "accommodationUnique", "foodPreferences", "localFoodInterest", "internationalFoodInterest", "mainInterests", "mustSee", "popularVsHidden", "itineraryPace", "wantsFreeTime", "transportModes", "multiModal"
+        "budget", "spendingPriority", "accommodationType", "accommodationRequirements", "accommodationUnique", "foodPreferences", "localFoodInterest", "internationalFoodInterest", "mainInterests", "mustSee", "popularVsHidden", "itineraryPace", "wantsFreeTime", "transportModes", "multiModal", "accommodationTypeSelect", "desiredAmenities", "locationPreferences", "roomConfig", "primaryTransportModes", "rentalCarNeeds", "drivingComfort", "accessibilityNeeds"
       ],
     },
     {
       title: "Special & Experience",
       description: "Special occasions, themes, and past travel",
       fields: [
-        "specialOccasion", "tripTheme", "beenBefore", "likesDislikes", "realTimeAdapt", "wantsNotifications", "isCollaborative", "collaboratorEmails", "inspirationUrl"
+        "specialOccasion", "tripTheme", "beenBefore", "likesDislikes", "realTimeAdapt", "wantsNotifications", "isCollaborative", "collaboratorEmails", "inspirationUrl", "mustVisit", "previouslyVisited"
       ],
     },
   ]
@@ -371,11 +395,46 @@ export function TravelPlannerForm() {
                               <Input 
                                 placeholder="Where do you want to go?" 
                                 className="pl-10" 
-                                {...field} 
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
                               />
                             </div>
                           </FormControl>
                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="preferredDestinations"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Preferred Destinations or Regions</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Europe, Southeast Asia, Japan" value={field.value ?? ""} onChange={field.onChange} />
+                          </FormControl>
+                          <FormDescription>
+                            List any specific destinations or regions you prefer.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="openToAISuggestions"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Open to AI Suggestions</FormLabel>
+                            <FormDescription>
+                              Allow the AI to suggest destinations or experiences outside your preferences.
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
@@ -462,7 +521,7 @@ export function TravelPlannerForm() {
                                     field.onChange(date);
                                     // Validate end date is after start date
                                     const startDate = form.getValues("startDate");
-                                    if (startDate && date <= startDate) {
+                                    if (startDate && date && date <= startDate) {
                                       form.setError("endDate", {
                                         type: "manual",
                                         message: "End date must be after start date",
@@ -676,7 +735,8 @@ export function TravelPlannerForm() {
                                   <Input
                                     className="w-48"
                                     placeholder="Please specify"
-                                    {...form.register("customAgeGroup")}
+                                    value={field.value ?? ""}
+                                    onChange={field.onChange}
                                   />
                                 )}
                               </div>
@@ -688,6 +748,178 @@ export function TravelPlannerForm() {
                           </FormItem>
                         );
                       }}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="accommodationTypeSelect"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Accommodation Type</FormLabel>
+                          <FormControl>
+                            <select value={field.value ?? ""} onChange={e => field.onChange(e.target.value)} className="w-full border rounded px-3 py-2">
+                              <option value="">Select type</option>
+                              <option value="hotel">Hotel</option>
+                              <option value="hostel">Hostel</option>
+                              <option value="airbnb">Airbnb</option>
+                              <option value="luxury">Luxury</option>
+                              <option value="budget">Budget</option>
+                            </select>
+                          </FormControl>
+                          <FormDescription>
+                            Choose your preferred type of accommodation.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="desiredAmenities"
+                      render={({ field }) => {
+                        const options = ["WiFi", "Breakfast", "Gym", "Pool", "Pet-friendly"];
+                        return (
+                          <FormItem>
+                            <FormLabel>Desired Amenities</FormLabel>
+                            <FormControl>
+                              <div className="flex flex-wrap gap-3">
+                                {options.map(option => (
+                                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={Array.isArray(field.value) && field.value.includes(option)}
+                                      onChange={e => {
+                                        let newArr = (Array.isArray(field.value) ? field.value : []).filter((v: string) => v !== option);
+                                        if (e.target.checked) newArr.push(option);
+                                        field.onChange(newArr);
+                                      }}
+                                    />
+                                    {option}
+                                  </label>
+                                ))}
+                              </div>
+                            </FormControl>
+                            <FormDescription>
+                              Select all amenities you want in your accommodation.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="locationPreferences"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location Preferences</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. City center, quiet areas, near attractions" value={field.value ?? ""} onChange={field.onChange} />
+                          </FormControl>
+                          <FormDescription>
+                            Describe your preferred location for accommodation.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="roomConfig"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Room Configuration Needs</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 2 double beds, family suite, adjoining rooms" value={field.value ?? ""} onChange={field.onChange} />
+                          </FormControl>
+                          <FormDescription>
+                            Specify any special room configuration requirements.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="primaryTransportModes"
+                      render={({ field }) => {
+                        const options = ["Flights", "Trains", "Cars", "Public Transport"];
+                        return (
+                          <FormItem>
+                            <FormLabel>Primary Transportation Modes</FormLabel>
+                            <FormControl>
+                              <div className="flex flex-wrap gap-3">
+                                {options.map(option => (
+                                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                      type="checkbox"
+                                      checked={Array.isArray(field.value) && field.value.includes(option)}
+                                      onChange={e => {
+                                        let newArr = (Array.isArray(field.value) ? field.value : []).filter((v: string) => v !== option);
+                                        if (e.target.checked) newArr.push(option);
+                                        field.onChange(newArr);
+                                      }}
+                                    />
+                                    {option}
+                                  </label>
+                                ))}
+                              </div>
+                            </FormControl>
+                            <FormDescription>
+                              Select all transportation modes you plan to use.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="rentalCarNeeds"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rental Car Needs</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. SUV, automatic, child seat, etc." value={field.value ?? ""} onChange={field.onChange} />
+                          </FormControl>
+                          <FormDescription>
+                            Specify any rental car requirements.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="drivingComfort"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Comfortable Driving in Destination?</FormLabel>
+                            <FormDescription>
+                              Are you comfortable driving in the destination country/region?
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="accessibilityNeeds"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Mobility & Accessibility Needs</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Describe any mobility or accessibility requirements (e.g. wheelchair access, step-free, etc.)" value={field.value ?? ""} onChange={field.onChange} />
+                          </FormControl>
+                          <FormDescription>
+                            Let us know about any special mobility or accessibility needs.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
                 )}
@@ -743,25 +975,8 @@ export function TravelPlannerForm() {
                                     <Input 
                                       placeholder="Enter email addresses separated by commas" 
                                       className="pl-10" 
-                                      {...field}
-                                      onChange={(e) => {
-                                        field.onChange(e);
-                                        // Validate email format on change
-                                        if (e.target.value) {
-                                          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                                          const emails = e.target.value.split(',').map(email => email.trim());
-                                          const allValid = emails.every(email => emailRegex.test(email));
-                                          
-                                          if (!allValid) {
-                                            form.setError("collaboratorEmails", {
-                                              type: "manual",
-                                              message: "Please enter valid email addresses separated by commas",
-                                            });
-                                          } else {
-                                            form.clearErrors("collaboratorEmails");
-                                          }
-                                        }
-                                      }}
+                                      value={field.value ?? ""}
+                                      onChange={field.onChange}
                                     />
                                   </div>
                                 </FormControl>
@@ -788,29 +1003,46 @@ export function TravelPlannerForm() {
                               <Input 
                                 placeholder="Paste a URL with travel content to use as inspiration" 
                                 className="pl-10" 
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  // Validate URL format on change
-                                  if (e.target.value) {
-                                    try {
-                                      new URL(e.target.value);
-                                      form.clearErrors("inspirationUrl");
-                                    } catch {
-                                      form.setError("inspirationUrl", {
-                                        type: "manual",
-                                        message: "Please enter a valid URL",
-                                      });
-                                    }
-                                  } else {
-                                    form.clearErrors("inspirationUrl");
-                                  }
-                                }}
+                                value={field.value ?? ""}
+                                onChange={field.onChange}
                               />
                             </div>
                           </FormControl>
                           <FormDescription>
                             Convert any travel article, blog post, or social media link into an itinerary.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="mustVisit"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Must-Visit Places or Bucket List Items</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="List any must-see places or experiences for this trip" value={field.value ?? ""} onChange={field.onChange} />
+                          </FormControl>
+                          <FormDescription>
+                            Mention any specific places or activities you want to include.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="previouslyVisited"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Previously Visited Locations</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="List places you've already visited to avoid repetition" value={field.value ?? ""} onChange={field.onChange} />
+                          </FormControl>
+                          <FormDescription>
+                            This helps us avoid suggesting places you've already been.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
