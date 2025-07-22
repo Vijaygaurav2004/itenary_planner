@@ -101,6 +101,7 @@ const config = {
         "bounce-delay-4": "bounce 1s infinite 0.3s",
         "bounce-delay-5": "bounce 1s infinite 0.4s",
         "blob": "blob 7s infinite",
+        "spin-slow": "spin 3s linear infinite",
       },
       transitionDelay: {
         '2000': '2000ms',

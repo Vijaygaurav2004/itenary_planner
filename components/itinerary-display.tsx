@@ -61,6 +61,7 @@ interface Itinerary {
   days: DayPlan[]
   totalCost: string
   coverImage: string
+  htmlContent?: string // Add htmlContent field
 }
 
 // Mock data for demonstration
@@ -203,7 +204,7 @@ const mockItinerary: Itinerary = {
 
 export function ItineraryDisplay({ itinerary = mockItinerary }) {
   const [activeDay, setActiveDay] = useState(1)
-  const [isMapView, setIsMapView] = useState(false)
+  const [viewMode, setViewMode] = useState<'timeline' | 'map' | 'formatted'>('timeline')
   const [isLoaded, setIsLoaded] = useState(false)
   const [expandedActivity, setExpandedActivity] = useState<string | null>(null)
   
@@ -313,19 +314,28 @@ export function ItineraryDisplay({ itinerary = mockItinerary }) {
         <h2 className="text-xl font-bold">Your Itinerary</h2>
         <div className="flex items-center space-x-2">
           <Button 
-            variant={isMapView ? "outline" : "default"} 
+            variant={viewMode === 'timeline' ? "default" : "outline"} 
             size="sm" 
             className="rounded-l-full rounded-r-none"
-            onClick={() => setIsMapView(false)}
+            onClick={() => setViewMode('timeline')}
           >
             <Calendar className="h-4 w-4 mr-2" />
             Timeline
           </Button>
           <Button 
-            variant={isMapView ? "default" : "outline"} 
+            variant={viewMode === 'formatted' ? "default" : "outline"} 
+            size="sm" 
+            className="rounded-none"
+            onClick={() => setViewMode('formatted')}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Formatted
+          </Button>
+          <Button 
+            variant={viewMode === 'map' ? "default" : "outline"} 
             size="sm" 
             className="rounded-r-full rounded-l-none"
-            onClick={() => setIsMapView(true)}
+            onClick={() => setViewMode('map')}
           >
             <Map className="h-4 w-4 mr-2" />
             Map
@@ -379,7 +389,23 @@ export function ItineraryDisplay({ itinerary = mockItinerary }) {
         {/* Day details */}
         <div className="md:col-span-2">
           <AnimatePresence mode="wait">
-            {isMapView ? (
+            {viewMode === 'formatted' && (
+              <motion.div
+                key="formatted-view"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-lg"
+              >
+                <div className="p-6">
+                  <h2 className="text-2xl font-bold mb-4">Your Formatted Itinerary</h2>
+                  <div className="prose prose-blue max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: itinerary.htmlContent || 'No formatted itinerary content available.' }} />
+                </div>
+              </motion.div>
+            )}
+            
+            {viewMode === 'map' && (
               <motion.div
                 key="map-view"
                 initial={{ opacity: 0, y: 20 }}
@@ -398,7 +424,9 @@ export function ItineraryDisplay({ itinerary = mockItinerary }) {
                   </div>
                 </div>
               </motion.div>
-            ) : (
+            )}
+            
+            {viewMode === 'timeline' && (
               <motion.div
                 key="timeline-view"
                 initial={{ opacity: 0, y: 20 }}

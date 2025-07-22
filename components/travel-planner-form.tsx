@@ -41,57 +41,57 @@ const formSchema = z.object({
     .refine((val) => /^[A-Za-z\s\-,.()]+$/.test(val), {
       message: "Destination should only contain letters, spaces, and common punctuation",
     }),
-  startDate: z.date({ required_error: "Start date is required" }).nullable().default(null),
-  endDate: z.date({ required_error: "End date is required" }).nullable().default(null),
+  startDate: z.date({ required_error: "Start date is required" }).nullable(),
+  endDate: z.date({ required_error: "End date is required" }).nullable(),
   budget: z.number().min(500, "Budget must be at least $500"),
-  interests: z.string().nullable().default(""),
-  travelStyle: z.string().nullable().default(""),
+  interests: z.string().nullable(),
+  travelStyle: z.string().nullable(),
   isCollaborative: z.boolean().default(false),
-  collaboratorEmails: z.string().nullable().default(""),
-  inspirationUrl: z.string().nullable().default(""),
+  collaboratorEmails: z.string().nullable(),
+  inspirationUrl: z.string().nullable(),
   travelDays: z.number().default(0),
   openToSuggestions: z.boolean().default(false),
   groupSize: z.number().min(1, "At least one person required").default(1),
   ageGroups: z.array(z.string()).default([]),
-  customAgeGroup: z.string().nullable().default(""),
+  customAgeGroup: z.string().nullable(),
   groupType: z.enum(["solo", "couple", "family", "friends"]).default("solo"),
   hasChildren: z.boolean().default(false),
   hasElderly: z.boolean().default(false),
   hasMobilityNeeds: z.boolean().default(false),
-  dietaryRestrictions: z.string().nullable().default(""),
-  allergies: z.string().nullable().default(""),
+  dietaryRestrictions: z.string().nullable(),
+  allergies: z.string().nullable(),
   spendingPriority: z.enum(["accommodation", "activities", "food", "transportation"]).default("accommodation"),
-  accommodationType: z.string().nullable().default(""),
-  accommodationRequirements: z.string().nullable().default(""),
+  accommodationType: z.string().nullable(),
+  accommodationRequirements: z.string().nullable(),
   accommodationUnique: z.boolean().default(false),
-  foodPreferences: z.string().nullable().default(""),
+  foodPreferences: z.string().nullable(),
   localFoodInterest: z.boolean().default(false),
   internationalFoodInterest: z.boolean().default(false),
-  mainInterests: z.string().nullable().default(""),
-  mustSee: z.string().nullable().default(""),
+  mainInterests: z.string().nullable(),
+  mustSee: z.string().nullable(),
   popularVsHidden: z.enum(["popular", "hidden", "both"]).default("both"),
   itineraryPace: z.enum(["relaxed", "packed"]).default("relaxed"),
   wantsFreeTime: z.boolean().default(false),
-  transportModes: z.string().nullable().default(""),
+  transportModes: z.string().nullable(),
   multiModal: z.boolean().default(false),
-  specialOccasion: z.string().nullable().default(""),
-  tripTheme: z.string().nullable().default(""),
+  specialOccasion: z.string().nullable(),
+  tripTheme: z.string().nullable(),
   beenBefore: z.boolean().default(false),
-  likesDislikes: z.string().nullable().default(""),
+  likesDislikes: z.string().nullable(),
   realTimeAdapt: z.boolean().default(false),
   wantsNotifications: z.boolean().default(false),
-  preferredDestinations: z.string().nullable().default(""),
+  preferredDestinations: z.string().nullable(),
   openToAISuggestions: z.boolean().default(false),
-  mustVisit: z.string().nullable().default(""),
-  previouslyVisited: z.string().nullable().default(""),
-  accommodationTypeSelect: z.string().nullable().default(""),
+  mustVisit: z.string().nullable(),
+  previouslyVisited: z.string().nullable(),
+  accommodationTypeSelect: z.string().nullable(),
   desiredAmenities: z.array(z.string()).default([]),
-  locationPreferences: z.string().nullable().default(""),
-  roomConfig: z.string().nullable().default(""),
+  locationPreferences: z.string().nullable(),
+  roomConfig: z.string().nullable(),
   primaryTransportModes: z.array(z.string()).default([]),
-  rentalCarNeeds: z.string().nullable().default(""),
+  rentalCarNeeds: z.string().nullable(),
   drivingComfort: z.boolean().default(false),
-  accessibilityNeeds: z.string().nullable().default("")
+  accessibilityNeeds: z.string().nullable()
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -105,58 +105,9 @@ export function TravelPlannerForm() {
   const [isValidatingDestination, setIsValidatingDestination] = useState(false)
   
   // List of popular destinations for validation
-  const popularDestinations = [
-    "Paris", "London", "New York", "Tokyo", "Rome", "Barcelona", "Sydney", "Dubai",
-    "Singapore", "Hong Kong", "Bangkok", "Istanbul", "Berlin", "Amsterdam", "Prague",
-    "Vienna", "Madrid", "Lisbon", "Venice", "Florence", "Athens", "Cairo", "Marrakech",
-    "Cape Town", "Rio de Janeiro", "Buenos Aires", "Mexico City", "Toronto", "Vancouver",
-    "San Francisco", "Los Angeles", "Las Vegas", "Miami", "Chicago", "Boston", "Seattle",
-    "Washington DC", "New Orleans", "Hawaii", "Bali", "Phuket", "Maldives", "Santorini",
-    "Mykonos", "Ibiza", "Cancun", "Punta Cana", "Jamaica", "Bahamas", "Fiji", "Tahiti",
-    "Kyoto", "Seoul", "Shanghai", "Beijing", "Mumbai", "Delhi", "Agra", "Jaipur", "Goa",
-    "Kuala Lumpur", "Hanoi", "Ho Chi Minh City", "Manila", "Auckland", "Melbourne",
-    "Brisbane", "Perth", "Edinburgh", "Glasgow", "Dublin", "Belfast", "Copenhagen",
-    "Stockholm", "Oslo", "Helsinki", "Reykjavik", "Brussels", "Bruges", "Geneva", "Zurich",
-    "Munich", "Frankfurt", "Hamburg", "Milan", "Naples", "Palermo", "Seville", "Granada",
-    "Valencia", "Porto", "Casablanca", "Nairobi", "Johannesburg", "Dubai", "Abu Dhabi",
-    "Doha", "Muscat", "Jerusalem", "Tel Aviv", "Petra", "Beirut", "Istanbul", "Antalya",
-    "Cappadocia", "Moscow", "St. Petersburg", "Kiev", "Warsaw", "Krakow", "Budapest",
-    "Bucharest", "Sofia", "Belgrade", "Zagreb", "Ljubljana", "Dubrovnik", "Split",
-    "Sarajevo", "Tirana", "Skopje", "Valletta", "Nicosia", "Limassol", "Cyprus", "Malta",
-    "Sicily", "Sardinia", "Corsica", "Mallorca", "Ibiza", "Tenerife", "Gran Canaria",
-    "Madeira", "Azores", "Iceland", "Greenland", "Svalbard", "Lapland", "Faroe Islands",
-    "Andorra", "Monaco", "San Marino", "Vatican City", "Luxembourg", "Liechtenstein",
-    "Montenegro", "Albania", "North Macedonia", "Kosovo", "Moldova", "Belarus", "Ukraine",
-    "Georgia", "Armenia", "Azerbaijan", "Kazakhstan", "Uzbekistan", "Kyrgyzstan",
-    "Tajikistan", "Turkmenistan", "Mongolia", "Tibet", "Nepal", "Bhutan", "Bangladesh",
-    "Sri Lanka", "Maldives", "Seychelles", "Mauritius", "Reunion", "Madagascar", "Tanzania",
-    "Kenya", "Uganda", "Rwanda", "Ethiopia", "Egypt", "Morocco", "Tunisia", "Algeria",
-    "Libya", "Sudan", "South Sudan", "Somalia", "Djibouti", "Eritrea", "Senegal", "Gambia",
-    "Guinea", "Sierra Leone", "Liberia", "Ivory Coast", "Ghana", "Togo", "Benin", "Nigeria",
-    "Cameroon", "Gabon", "Congo", "Democratic Republic of Congo", "Angola", "Namibia",
-    "Botswana", "Zimbabwe", "Zambia", "Malawi", "Mozambique", "South Africa", "Lesotho",
-    "Eswatini", "Comoros", "India", "China", "Japan", "South Korea", "North Korea",
-    "Taiwan", "Philippines", "Indonesia", "Malaysia", "Singapore", "Brunei", "East Timor",
-    "Papua New Guinea", "Solomon Islands", "Vanuatu", "Fiji", "Samoa", "Tonga", "Kiribati",
-    "Marshall Islands", "Micronesia", "Palau", "Nauru", "Tuvalu", "Australia", "New Zealand",
-    "United States", "Canada", "Mexico", "Guatemala", "Belize", "El Salvador", "Honduras",
-    "Nicaragua", "Costa Rica", "Panama", "Colombia", "Venezuela", "Guyana", "Suriname",
-    "French Guiana", "Brazil", "Ecuador", "Peru", "Bolivia", "Paraguay", "Uruguay",
-    "Argentina", "Chile", "United Kingdom", "Ireland", "France", "Germany", "Italy", "Spain",
-    "Portugal", "Belgium", "Netherlands", "Luxembourg", "Switzerland", "Austria", "Greece",
-    "Denmark", "Sweden", "Norway", "Finland", "Iceland", "Estonia", "Latvia", "Lithuania",
-    "Poland", "Czech Republic", "Slovakia", "Hungary", "Romania", "Bulgaria", "Slovenia",
-    "Croatia", "Bosnia and Herzegovina", "Serbia", "Albania", "North Macedonia", "Montenegro",
-    "Kosovo", "Cyprus", "Malta", "Russia", "Belarus", "Ukraine", "Moldova", "Georgia",
-    "Armenia", "Azerbaijan", "Kazakhstan", "Uzbekistan", "Turkmenistan", "Kyrgyzstan",
-    "Tajikistan", "Afghanistan", "Pakistan", "Iran", "Iraq", "Syria", "Lebanon", "Israel",
-    "Jordan", "Saudi Arabia", "Kuwait", "Bahrain", "Qatar", "United Arab Emirates", "Oman",
-    "Yemen", "Turkey", "Cyprus"
-  ];
-  
   // Initialize form
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       destination: "",
       startDate: null,
@@ -267,6 +218,20 @@ export function TravelPlannerForm() {
         isCollaborative: data.isCollaborative,
         collaboratorEmails: data.collaboratorEmails || "",
         inspirationUrl: data.inspirationUrl || "",
+        groupSize: data.groupSize,
+        ageGroups: data.ageGroups,
+        groupType: data.groupType,
+        accommodationType: data.accommodationType || "",
+        accommodationTypeSelect: data.accommodationTypeSelect || "",
+        roomConfig: data.roomConfig || "",
+        rentalCarNeeds: data.rentalCarNeeds || "",
+        accessibilityNeeds: data.accessibilityNeeds || "",
+        dietaryRestrictions: data.dietaryRestrictions || "",
+        foodPreferences: data.foodPreferences || "",
+        localFoodInterest: data.localFoodInterest,
+        internationalFoodInterest: data.internationalFoodInterest,
+        spendingPriority: data.spendingPriority,
+        mustVisit: data.mustVisit || ""
       })
       
       setGeneratedItinerary(result)
@@ -292,13 +257,10 @@ export function TravelPlannerForm() {
       if (destination) {
         setIsValidatingDestination(true);
         
-        // Check if destination is in our list or validate with a simple pattern
-        const isValidDestination = popularDestinations.some(place => 
-          destination.toLowerCase() === place.toLowerCase() ||
-          destination.toLowerCase().includes(place.toLowerCase())
-        );
+        // Simple validation with a regex pattern
+        const isValidDestination = /^[A-Za-z\s\-,.()]+$/.test(destination);
         
-        if (!isValidDestination && !/^[A-Za-z\s\-,.()]+$/.test(destination)) {
+        if (!isValidDestination) {
           form.setError("destination", {
             type: "manual",
             message: "Please enter a valid destination",
@@ -312,7 +274,10 @@ export function TravelPlannerForm() {
       
       // Additional validation for end date
       if (form.getValues("startDate") && form.getValues("endDate")) {
-        if (form.getValues("endDate") && form.getValues("startDate") && form.getValues("endDate") <= form.getValues("startDate")) {
+        const startDate = form.getValues("startDate");
+        const endDate = form.getValues("endDate");
+        
+        if (endDate && startDate && endDate <= startDate) {
           form.setError("endDate", {
             type: "manual",
             message: "End date must be after start date",
@@ -398,7 +363,7 @@ export function TravelPlannerForm() {
   return (
     <FormProvider {...form}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
           {/* Progress indicator */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
@@ -466,7 +431,7 @@ export function TravelPlannerForm() {
                 {formStep === 0 && (
                   <div className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="destination"
                       render={({ field }) => (
                         <FormItem>
@@ -502,7 +467,7 @@ export function TravelPlannerForm() {
                     />
                     
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="openToAISuggestions"
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -521,7 +486,7 @@ export function TravelPlannerForm() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="startDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
@@ -548,7 +513,7 @@ export function TravelPlannerForm() {
                               <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                   mode="single"
-                                  selected={field.value}
+                                  selected={field.value as Date | undefined}
                                   onSelect={(date) => {
                                     field.onChange(date);
                                     // Clear end date error when start date changes
@@ -569,7 +534,7 @@ export function TravelPlannerForm() {
                       />
                       
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="endDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
@@ -596,7 +561,7 @@ export function TravelPlannerForm() {
                               <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                   mode="single"
-                                  selected={field.value}
+                                  selected={field.value as Date | undefined}
                                   onSelect={(date) => {
                                     field.onChange(date);
                                     // Validate end date is after start date
@@ -630,7 +595,7 @@ export function TravelPlannerForm() {
                 {formStep === 1 && (
                   <div className="space-y-4">
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="budget"
                       render={({ field }) => {
                         const [useCustomBudget, setUseCustomBudget] = useState(false);
@@ -698,12 +663,59 @@ export function TravelPlannerForm() {
                       }}
                     />
                     
+                    {/* Spending Priorities Section */}
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
+                      name="spendingPriority"
+                      render={({ field }) => {
+                        const priorities = [
+                          { value: "accommodation", label: "Accommodation", icon: "🏨", description: "Luxury or comfortable stays" },
+                          { value: "activities", label: "Activities", icon: "🎭", description: "Experiences and attractions" },
+                          { value: "food", label: "Food & Dining", icon: "🍽️", description: "Culinary experiences" },
+                          { value: "transportation", label: "Transportation", icon: "🚗", description: "Getting around in style" }
+                        ];
+                        
+                        return (
+                          <FormItem>
+                            <FormLabel>Spending Priorities</FormLabel>
+                            <FormDescription>
+                              Where would you prefer to allocate more of your budget?
+                            </FormDescription>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                              {priorities.map((priority) => (
+                                <FormControl key={priority.value}>
+                                  <div
+                                    className={cn(
+                                      "flex items-center space-x-3 space-y-0 rounded-md border p-4 cursor-pointer transition-all",
+                                      field.value === priority.value
+                                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                                        : "hover:bg-gray-50 dark:hover:bg-gray-900/10"
+                                    )}
+                                    onClick={() => field.onChange(priority.value)}
+                                  >
+                                    <div className="text-2xl">{priority.icon}</div>
+                                    <div className="space-y-1">
+                                      <p className="font-medium leading-none">{priority.label}</p>
+                                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        {priority.description}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </FormControl>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+                    
+                    <FormField
+                      control={form.control as any}
                       name="interests"
                       render={({ field }) => {
                         // Parse the value as an array
-                        const valueArray = field.value ? field.value.split(",").map(s => s.trim()).filter(Boolean) : [];
+                        const valueArray = field.value ? field.value.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
                         const isOtherChecked = valueArray.includes("Other");
                         return (
                           <FormItem>
@@ -716,7 +728,7 @@ export function TravelPlannerForm() {
                                       type="checkbox"
                                       checked={valueArray.includes(option)}
                                       onChange={e => {
-                                        let newArr = valueArray.filter(v => v !== option);
+                                        let newArr = valueArray.filter((v: string) => v !== option);
                                         if (e.target.checked) newArr.push(option);
                                         field.onChange(newArr.join(", "));
                                       }}
@@ -729,7 +741,7 @@ export function TravelPlannerForm() {
                                     type="checkbox"
                                     checked={isOtherChecked}
                                     onChange={e => {
-                                      let newArr = valueArray.filter(v => v !== "Other");
+                                      let newArr = valueArray.filter((v: string) => v !== "Other");
                                       if (e.target.checked) newArr.push("Other");
                                       field.onChange(newArr.join(", "));
                                     }}
@@ -744,7 +756,7 @@ export function TravelPlannerForm() {
                                     onChange={e => setOtherInterest(e.target.value)}
                                     onBlur={() => {
                                       // Add or update the custom interest in the value
-                                      let newArr = valueArray.filter(v => v !== "Other" && !v.startsWith("Other:"));
+                                      let newArr = valueArray.filter((v: string) => v !== "Other" && !v.startsWith("Other:"));
                                       if (otherInterest.trim()) {
                                         newArr.push(`Other:${otherInterest.trim()}`);
                                       } else {
@@ -1084,6 +1096,97 @@ export function TravelPlannerForm() {
                       )}
                     />
                     
+                    {/* Food Preferences Section */}
+                    <div className="space-y-4 border rounded-lg p-4 bg-gray-50 dark:bg-gray-900/50">
+                      <h3 className="font-medium text-lg">Food Preferences</h3>
+                      
+                      <FormField
+                        control={form.control as any}
+                        name="dietaryRestrictions"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Dietary Restrictions</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="e.g. vegetarian, vegan, gluten-free, nut allergies" 
+                                value={field.value ?? ""} 
+                                onChange={field.onChange} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              List any dietary restrictions or allergies.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control as any}
+                        name="foodPreferences"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Food Preferences</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Describe your food preferences, cuisines you enjoy, or specific dishes you'd like to try" 
+                                value={field.value ?? ""} 
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Tell us about your food preferences for this trip.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control as any}
+                          name="localFoodInterest"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">Local Cuisine</FormLabel>
+                                <FormDescription>
+                                  Interested in trying local dishes
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control as any}
+                          name="internationalFoodInterest"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base">International Cuisine</FormLabel>
+                                <FormDescription>
+                                  Interested in international restaurants
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                    
                     <FormField
                       control={form.control}
                       name="accessibilityNeeds"
@@ -1256,7 +1359,8 @@ export function TravelPlannerForm() {
               </Button>
             ) : (
               <Button 
-                type="submit" 
+                type="button" 
+                onClick={form.handleSubmit(onSubmit as any)}
                 className="rounded-full relative overflow-hidden group"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:from-blue-700 group-hover:to-indigo-700"></span>
